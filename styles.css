@@ -388,6 +388,18 @@ dialog::backdrop { background: rgba(2, 6, 12, 0.76); backdrop-filter: blur(5px);
 .setting-output output { color: var(--primary); font-weight: 800; }
 .settings-five { grid-template-columns: repeat(5, 1fr); }
 .dialog-actions { display: flex; justify-content: space-between; gap: 10px; padding-top: 8px; }
+#paste-textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  background: #0d1421;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  font-size: 0.82rem;
+  resize: vertical;
+}
 
 .toast {
   position: fixed;

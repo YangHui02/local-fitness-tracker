@@ -44,7 +44,9 @@ const elements = Object.fromEntries(
     "training-carbs", "training-protein", "training-fat", "training-plan-calories",
     "rest-carbs", "rest-protein", "rest-fat", "rest-plan-calories",
     "default-weight", "bmr", "activity-factor", "step-coefficient", "strength-met",
-    "reset-settings", "export-button", "import-button", "import-file", "toast",
+    "reset-settings", "export-button", "import-button", "paste-import-button",
+    "paste-dialog", "close-paste", "cancel-paste", "confirm-paste", "paste-textarea",
+    "import-file", "toast",
   ].map((id) => [elementKey(id), document.getElementById(id)]),
 );
 
@@ -667,6 +669,27 @@ elements.importFile.addEventListener("change", async () => {
     showToast("备份已恢复");
   } catch (error) {
     showToast(`导入失败：${error.message}`, true);
+  }
+});
+
+elements.pasteImportButton.addEventListener("click", () => {
+  elements.pasteTextarea.value = "";
+  elements.pasteDialog.showModal();
+});
+elements.closePaste.addEventListener("click", () => elements.pasteDialog.close());
+elements.cancelPaste.addEventListener("click", () => elements.pasteDialog.close());
+elements.confirmPaste.addEventListener("click", () => {
+  const text = elements.pasteTextarea.value.trim();
+  if (!text) { showToast("请先粘贴 JSON 内容", { error: true }); return; }
+  if (!window.confirm("导入会替换当前所有记录与设置，是否继续？")) return;
+  try {
+    repository.importBackup(text, "replace");
+    elements.pasteDialog.close();
+    resetEntryForm();
+    render();
+    showToast("备份已恢复");
+  } catch (error) {
+    showToast(`导入失败：${error.message}`, { error: true });
   }
 });
 
