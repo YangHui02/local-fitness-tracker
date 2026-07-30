@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0c111b">
+    <title>日常热量摄入与消耗记录</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">LOCAL FITNESS LOG</p>
+        <h1>日常热量摄入与消耗记录</h1>
+        <p class="subtitle">营养、训练与体重变化，全部留在这台电脑。</p>
+      </div>
+      <nav class="header-actions" aria-label="数据工具">
+        <button id="settings-button" class="button ghost" type="button">计划与参数</button>
+        <button id="export-button" class="button ghost" type="button">导出备份</button>
+        <button id="import-button" class="button ghost" type="button">导入备份</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+      </nav>
+    </header>
+
+    <main>
+      <section class="month-bar panel">
+        <div class="segmented" aria-label="汇总周期">
+          <button id="view-month" type="button" aria-pressed="true">月度</button>
+          <button id="view-year" type="button" aria-pressed="false">年度</button>
+        </div>
+        <div id="month-controls" class="period-controls">
+          <button id="previous-month" class="icon-button" type="button" aria-label="上个月">←</button>
+          <label class="month-control">
+            <span>查看月份</span>
+            <input id="month-picker" type="month">
+          </label>
+          <button id="next-month" class="icon-button" type="button" aria-label="下个月">→</button>
+          <button id="today-month" class="button compact" type="button">回到本月</button>
+        </div>
+        <div id="year-controls" class="period-controls" hidden>
+          <button id="previous-year" class="icon-button" type="button" aria-label="上一年">←</button>
+          <label class="month-control">
+            <span>查看年份</span>
+            <input id="year-picker" type="number" min="2000" max="2200" step="1">
+          </label>
+          <button id="next-year" class="icon-button" type="button" aria-label="下一年">→</button>
+          <button id="today-year" class="button compact" type="button">回到今年</button>
+        </div>
+      </section>
+
+      <section class="summary-grid" aria-label="本月概览">
+        <article class="summary-card">
+          <span>已记录</span>
+          <strong id="summary-days">0 天</strong>
+          <small>所选周期有效数据</small>
+        </article>
+        <article class="summary-card">
+          <span>平均摄入</span>
+          <strong id="summary-intake">—</strong>
+          <small>kcal / 天</small>
+        </article>
+        <article class="summary-card">
+          <span>平均消耗</span>
+          <strong id="summary-expenditure">—</strong>
+          <small>kcal / 天</small>
+        </article>
+        <article class="summary-card">
+          <span>累计盈余</span>
+          <strong id="summary-surplus">0 kcal</strong>
+          <small>负数代表缺口</small>
+        </article>
+        <article class="summary-card">
+          <span>体重变化</span>
+          <strong id="summary-weight">—</strong>
+          <small id="summary-weight-detail">等待体重记录</small>
+        </article>
+      </section>
+
+      <section class="entry-layout">
+        <article class="panel entry-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">DAILY ENTRY</p>
+              <h2>当日录入</h2>
+            </div>
+            <span id="editing-badge" class="status-badge" hidden>正在编辑</span>
+          </div>
+
+          <form id="daily-form">
+            <div class="field full">
+              <label for="record-date">当天日期</label>
+              <input id="record-date" name="date" type="date" required>
+            </div>
+
+            <div class="field full featured-field">
+              <label for="weight-kg">体重 <span>kg，可选</span></label>
+              <input id="weight-kg" name="weightKg" type="number" min="1" max="500" step="0.05" placeholder="例如 71.55">
+            </div>
+
+            <fieldset id="day-type" class="day-type full">
+              <legend>日类型</legend>
+              <label>
+                <input type="radio" name="dayType" value="training" checked>
+                <span><b>训练日</b><small>含力量训练消耗</small></span>
+              </label>
+              <label>
+                <input type="radio" name="dayType" value="rest">
+                <span><b>休息日</b><small>保持恢复与营养</small></span>
+              </label>
+            </fieldset>
+
+            <div class="plan-strip full" aria-live="polite">
+              <div><span>计划热量</span><strong id="plan-calories">2400 kcal</strong></div>
+              <div><span>碳水</span><strong id="plan-carbs">327 g</strong></div>
+              <div><span>蛋白质</span><strong id="plan-protein">120 g</strong></div>
+              <div><span>脂肪</span><strong id="plan-fat">68 g</strong></div>
+            </div>
+
+            <div class="form-divider full"><span>实际摄入</span></div>
+            <div class="field">
+              <label for="actual-carbs">碳水 <span>g</span></label>
+              <input id="actual-carbs" name="carbs" type="number" min="0" step="0.1" required placeholder="0">
+            </div>
+            <div class="field">
+              <label for="actual-protein">蛋白质 <span>g</span></label>
+              <input id="actual-protein" name="protein" type="number" min="0" step="0.1" required placeholder="0">
+            </div>
+            <div class="field">
+              <label for="actual-fat">脂肪 <span>g</span></label>
+              <input id="actual-fat" name="fat" type="number" min="0" step="0.1" required placeholder="0">
+            </div>
+            <div class="metric-output">
+              <span>自动计算热量</span>
+              <output id="actual-calories">0 kcal</output>
+            </div>
+
+            <div class="form-divider full"><span>当日活动</span></div>
+            <div class="field">
+              <label for="steps">步数 <span>步</span></label>
+              <input id="steps" name="steps" type="number" min="0" step="1" value="0" required>
+            </div>
+            <div class="field">
+              <label for="strength-minutes">力量训练 <span>分钟</span></label>
+              <input id="strength-minutes" name="strengthMinutes" type="number" min="0" step="1" value="0" required>
+            </div>
+            <div class="field">
+              <label for="cardio-calories">有氧消耗 <span>kcal</span></label>
+              <input id="cardio-calories" name="cardioCalories" type="number" min="0" step="0.1" value="0" required>
+            </div>
+
+            <div class="calculation-preview full">
+              <div><span>基础活动</span><strong id="preview-base">—</strong></div>
+              <div><span>步数消耗</span><strong id="preview-steps">—</strong></div>
+              <div><span>力量消耗</span><strong id="preview-strength">—</strong></div>
+              <div><span>总消耗</span><strong id="preview-total">—</strong></div>
+              <div class="highlight"><span>预计盈余</span><strong id="preview-surplus">—</strong></div>
+            </div>
+
+            <div class="form-actions full">
+              <button id="cancel-edit" class="button ghost" type="button" hidden>取消编辑</button>
+              <button class="button primary" type="submit">保存当日记录</button>
+            </div>
+          </form>
+        </article>
+
+        <aside class="panel quick-guide">
+          <p class="eyebrow">QUICK VIEW</p>
+          <h2>计算口径</h2>
+          <div class="formula-card">
+            <span>当日热量</span>
+            <strong>碳水 × 4 + 蛋白质 × 4 + 脂肪 × 9</strong>
+          </div>
+          <ol>
+            <li><span>01</span><p>先填写当天三大营养素，热量自动得出。</p></li>
+            <li><span>02</span><p>补充步数、力量时长和有氧消耗。</p></li>
+            <li><span>03</span><p>保存后，下方本月图表即时更新。</p></li>
+          </ol>
+          <p class="privacy-note">数据只保存在当前浏览器。建议定期使用“导出备份”。</p>
+        </aside>
+      </section>
+
+      <section class="panel records-section">
+        <div class="section-heading">
+          <div>
+            <p id="records-eyebrow" class="eyebrow">MONTHLY LOG</p>
+            <h2 id="records-title">本月记录</h2>
+          </div>
+          <p id="record-count">暂无记录</p>
+        </div>
+        <div id="monthly-records" class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>日期</th><th>类型</th><th>体重</th><th>计划/实际热量 (kcal)</th>
+                <th>碳水 (g)</th><th>蛋白质 (g)</th><th>脂肪 (g)</th><th>步数 (步)</th>
+                <th>力量 (min)</th><th>有氧 (kcal)</th><th>总消耗 (kcal)</th><th>盈余 (kcal)</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="records-body"></tbody>
+          </table>
+          <div id="records-empty" class="empty-state">
+            <strong>这个月还没有记录</strong>
+            <span>从上方填写第一天，趋势会从这里开始。</span>
+          </div>
+        </div>
+        <div id="annual-records" class="table-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>月份</th><th>记录天数</th><th>月平均体重</th>
+                <th>日均摄入</th><th>日均消耗</th><th>累计盈余</th>
+                <th>日均碳水</th><th>日均蛋白质</th><th>日均脂肪</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="annual-records-body"></tbody>
+          </table>
+          <div id="annual-records-empty" class="empty-state">
+            <strong>这一年还没有记录</strong>
+            <span>保存每日数据后，年度月度汇总会显示在这里。</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="visual-section">
+        <div class="section-heading">
+          <div>
+            <p id="visual-eyebrow" class="eyebrow">MONTHLY TRENDS</p>
+            <h2 id="visual-title">本月可视化</h2>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <article class="panel chart-card wide weight-chart-card">
+            <header>
+              <div><h3>体重趋势</h3><p id="weight-chart-caption">空白日期不会按零计算</p></div>
+              <div id="weight-granularity" class="segmented compact-segmented" aria-label="体重图粒度" hidden>
+                <button id="weight-monthly" type="button" aria-pressed="true">按月平均</button>
+                <button id="weight-daily" type="button" aria-pressed="false">按天记录</button>
+              </div>
+            </header>
+            <div id="weight-chart" class="chart" role="img" aria-label="体重趋势图"></div>
+          </article>
+          <article class="panel chart-card wide intake-chart-card">
+            <header><div><h3>热量摄入与消耗</h3><p>观察每日能量平衡</p></div></header>
+            <div id="intake-chart" class="chart" role="img" aria-label="每日热量摄入与消耗图"></div>
+          </article>
+          <article class="panel chart-card wide surplus-chart-card">
+            <header><div><h3>每日热量盈余</h3><p>正数盈余，负数缺口</p></div></header>
+            <div id="surplus-chart" class="chart" role="img" aria-label="每日热量盈余图"></div>
+          </article>
+          <article class="panel chart-card wide macro-chart-card">
+            <header><div><h3>三大营养元素实际摄入</h3><p>碳水、蛋白质、脂肪实际克数</p></div></header>
+            <div id="macro-chart" class="chart" role="img" aria-label="三大营养元素实际摄入图"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="settings-dialog">
+      <form id="settings-form" method="dialog">
+        <div class="dialog-header">
+          <div><p class="eyebrow">SETTINGS</p><h2>计划与计算参数</h2></div>
+          <button id="close-settings" class="icon-button" type="button" aria-label="关闭">×</button>
+        </div>
+        <p class="dialog-note">计划热量由碳水、蛋白质、脂肪自动计算。修改只影响之后保存的新记录。</p>
+
+        <section class="settings-section">
+          <h3>训练日计划</h3>
+          <div class="settings-grid">
+            <label>碳水 g<input id="training-carbs" type="number" min="0" step="0.1" required></label>
+            <label>蛋白质 g<input id="training-protein" type="number" min="0" step="0.1" required></label>
+            <label>脂肪 g<input id="training-fat" type="number" min="0" step="0.1" required></label>
+            <div class="setting-output"><span>计划热量</span><output id="training-plan-calories"></output></div>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h3>休息日计划</h3>
+          <div class="settings-grid">
+            <label>碳水 g<input id="rest-carbs" type="number" min="0" step="0.1" required></label>
+            <label>蛋白质 g<input id="rest-protein" type="number" min="0" step="0.1" required></label>
+            <label>脂肪 g<input id="rest-fat" type="number" min="0" step="0.1" required></label>
+            <div class="setting-output"><span>计划热量</span><output id="rest-plan-calories"></output></div>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h3>消耗参数</h3>
+          <div class="settings-grid settings-five">
+            <label>默认体重 kg<input id="default-weight" type="number" min="1" step="0.1" required></label>
+            <label>基础代谢 kcal<input id="bmr" type="number" min="0" step="1" required></label>
+            <label>活动系数<input id="activity-factor" type="number" min="0" step="0.01" required></label>
+            <label>步数系数<input id="step-coefficient" type="number" min="0" step="0.00001" required></label>
+            <label>力量训练 MET<input id="strength-met" type="number" min="1" step="0.1" required></label>
+          </div>
+        </section>
+
+        <div class="dialog-actions">
+          <button id="reset-settings" class="button ghost" type="button">恢复默认</button>
+          <button class="button primary" value="save" type="submit">保存设置</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./js/app.mjs"></script>
+  </body>
+</html>
